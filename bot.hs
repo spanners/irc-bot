@@ -23,7 +23,6 @@ action h = do
     PING serv           -> pong h serv
     JOIN Bot chan       -> msg h chan $ "Hello, I am" ++ nickname
     JOIN nick chan      -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
-    PM   from DoJoin    -> joinChan h channel
     PM   from m         -> msg h from ("You said \"" ++ m ++ "\" to me?!")
     MSG  from chan Cat  -> msg h chan "Mew!"
     MSG  from chan Roll -> do
@@ -42,8 +41,6 @@ pattern MSG from to m <- (getPriv -> Just (from, Chan to, m))
 pattern Cat <- (isInfixOf "cat" . map toLower -> True)
 pattern Command cmd = '>':' ':cmd
 pattern Roll <- Command (map toLower -> "roll")
-pattern DoJoin <- Command (map toLower -> "do_join")
-
 
 -- Choose a nick
 nick :: Handle -> String -> IO ()
