@@ -8,12 +8,13 @@ import System.IO
 import Data.List
 import Data.Char
 import System.Random
-import Control.Concurrent
+import qualified Network.URL as U (importURL, url_path)
+import Data.Maybe
 
 server = "irc.freenode.org"
 port = 6667
 channel = "##bots"
-nickname = "JustAnotherIRCBot"
+nickname = "JustAnIRCBot"
 
 action :: Handle -> IO ()
 action h = do
@@ -21,16 +22,17 @@ action h = do
   putStrLn line
   case line of
     PING serv           -> pong h serv
-    JOIN Bot chan       -> msg h chan $ "Hello, I am" ++ nickname
+    JOIN Bot chan       -> msg h chan $ "Hello, I am " ++ nickname
     JOIN nick chan      -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
-    PM   from m         -> msg h from ("You said \"" ++ m ++ "\" to me?!")
+    --PM   from m         -> msg h from ("You said \"" ++ m ++ "\" to me?!")
+    PM   from (URL u)   -> msg h from ("Your URL is " ++ u)
     MSG  from chan Cat  -> msg h chan "Mew!"
     MSG  from chan Roll -> do
       roll :: Int <- randomRIO (1, 6)
       msg h chan (from ++ ": You rolled " ++ show roll)
     _                   -> return ()
 
-pattern Bot = "JustAnotherIRCBot"
+pattern Bot = "JustAnIRCBot"
 pattern JOIN nick chan 
    <- (words -> [getNick -> Just nick, "JOIN", chan])
 pattern PING serv <- (words -> ["PING", serv])
@@ -41,6 +43,7 @@ pattern MSG from to m <- (getPriv -> Just (from, Chan to, m))
 pattern Cat <- (isInfixOf "cat" . map toLower -> True)
 pattern Command cmd = '>':' ':cmd
 pattern Roll <- Command (map toLower -> "roll")
+pattern URL u <- ((\a -> (U.importURL a == Just a, a)) -> (True, u))
 
 -- Choose a nick
 nick :: Handle -> String -> IO ()
@@ -88,8 +91,6 @@ main = do
 
   nick h nickname
   user h nickname
-
-  threadDelay 3000
 
   joinChan h channel
 
