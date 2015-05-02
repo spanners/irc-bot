@@ -19,10 +19,6 @@ import Text.XML.Cursor               (attributeIs, content, element,
 import Data.Text                     (unpack)
 import Data.ByteString.Lazy.Internal (ByteString(..))
 
---main = do
---  getTitle "http://www.ted.com/talks/francis_collins_we_need_better_drugs_now.html"
-
-
 server = "irc.freenode.org"
 port = 6667
 channel = "##bots"
@@ -60,13 +56,8 @@ pattern Command cmd = '>':' ':cmd
 pattern Roll <- Command (map toLower -> "roll")
 pattern URL u <- ((\a -> (isURL a, a)) -> (True, u))
 
-getTitle :: String -> IO ()
-getTitle url = 
-  do
-    body <- simpleHttp url
-    print $ extractTitle body
-
-extractTitle ::ByteString -> String
+-- extract the <title> from a URL's responseBody
+extractTitle :: ByteString -> String
 extractTitle body = 
     unpack $ mconcat $ cursor $// element "title" &// content
   where cursor = fromDocument doc
