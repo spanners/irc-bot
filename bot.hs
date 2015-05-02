@@ -26,11 +26,11 @@ action h = do
     JOIN nick chan         -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
     PM   from m            -> msg h from ("You said \"" ++ m ++ "\" to me?!")
     MSG  from chan (URL u) -> msg h chan ("Your URL is " ++ u)
-    MSG  from chan Cat  -> msg h chan "Mew!"
-    MSG  from chan Roll -> do
+    MSG  from chan Cat     -> msg h chan "Mew!"
+    MSG  from chan Roll    -> do
       roll :: Int <- randomRIO (1, 6)
       msg h chan (from ++ ": You rolled " ++ show roll)
-    _                   -> return ()
+    _                      -> return ()
 
 pattern Bot = "JustAnIRCBot"
 pattern JOIN nick chan 
@@ -45,14 +45,15 @@ pattern Command cmd = '>':' ':cmd
 pattern Roll <- Command (map toLower -> "roll")
 pattern URL u <- ((\a -> (isURL a, a)) -> (True, u))
 
+-- Determine if a String is a URL
 isURL :: String -> Bool 
 isURL = isURL' . fromJust . U.importURL
-
-isURL' :: U.URL -> Bool
-isURL' url = 
-  case U.url_type url of
-    U.Absolute _ -> True
-    _            -> False
+  where
+    isURL' :: U.URL -> Bool
+    isURL' url = 
+      case U.url_type url of
+        U.Absolute _ -> True
+        _            -> False
 
 -- Choose a nick
 nick :: Handle -> String -> IO ()
