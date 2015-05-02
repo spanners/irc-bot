@@ -8,7 +8,7 @@ import System.IO
 import Data.List
 import Data.Char
 import System.Random
-import qualified Network.URL as U (importURL, url_path)
+import qualified Network.URL as U (importURL, url_type, URL, URLType(Absolute))
 import Data.Maybe
 
 server = "irc.freenode.org"
@@ -21,11 +21,11 @@ action h = do
   line <- hGetLine h
   putStrLn line
   case line of
-    PING serv           -> pong h serv
-    JOIN Bot chan       -> msg h chan $ "Hello, I am " ++ nickname
-    JOIN nick chan      -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
-    --PM   from m         -> msg h from ("You said \"" ++ m ++ "\" to me?!")
-    PM   from (URL u)   -> msg h from ("Your URL is " ++ u)
+    PING serv              -> pong h serv
+    JOIN Bot chan          -> msg h chan $ "Hello, I am " ++ nickname
+    JOIN nick chan         -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
+    PM   from m            -> msg h from ("You said \"" ++ m ++ "\" to me?!")
+    MSG  from chan (URL u) -> msg h chan ("Your URL is " ++ u)
     MSG  from chan Cat  -> msg h chan "Mew!"
     MSG  from chan Roll -> do
       roll :: Int <- randomRIO (1, 6)
@@ -43,7 +43,16 @@ pattern MSG from to m <- (getPriv -> Just (from, Chan to, m))
 pattern Cat <- (isInfixOf "cat" . map toLower -> True)
 pattern Command cmd = '>':' ':cmd
 pattern Roll <- Command (map toLower -> "roll")
-pattern URL u <- ((\a -> (U.importURL a == Just a, a)) -> (True, u))
+pattern URL u <- ((\a -> (isURL a, a)) -> (True, u))
+
+isURL :: String -> Bool 
+isURL = isURL' . fromJust . U.importURL
+
+isURL' :: U.URL -> Bool
+isURL' url = 
+  case U.url_type url of
+    U.Absolute _ -> True
+    _            -> False
 
 -- Choose a nick
 nick :: Handle -> String -> IO ()
