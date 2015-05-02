@@ -1,6 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 import Control.Monad
 import Network
@@ -8,8 +9,19 @@ import System.IO
 import Data.List
 import Data.Char
 import System.Random
-import qualified Network.URL as U (importURL, url_type, URL, URLType(Absolute))
+import qualified Network.URL as U    (importURL, url_type, URL, URLType(Absolute))
 import Data.Maybe
+import Data.Monoid                   (mconcat)
+import Network.HTTP.Conduit          (simpleHttp)
+import Text.HTML.DOM                 (parseLBS)
+import Text.XML.Cursor               (attributeIs, content, element,
+                                     fromDocument, ($//), (&//), (>=>))
+import Data.Text                     (unpack)
+import Data.ByteString.Lazy.Internal (ByteString(..))
+
+--main = do
+--  getTitle "http://www.ted.com/talks/francis_collins_we_need_better_drugs_now.html"
+
 
 server = "irc.freenode.org"
 port = 6667
@@ -25,7 +37,10 @@ action h = do
     JOIN Bot chan          -> msg h chan $ "Hello, I am " ++ nickname
     JOIN nick chan         -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
     PM   from m            -> msg h from ("You said \"" ++ m ++ "\" to me?!")
-    MSG  from chan (URL u) -> msg h chan ("Your URL is " ++ u)
+    MSG  from chan (URL u) -> do
+      body <- simpleHttp u
+      let title = extractTitle body
+      msg h chan ("Title: " ++ title)
     MSG  from chan Cat     -> msg h chan "Mew!"
     MSG  from chan Roll    -> do
       roll :: Int <- randomRIO (1, 6)
@@ -44,6 +59,18 @@ pattern Cat <- (isInfixOf "cat" . map toLower -> True)
 pattern Command cmd = '>':' ':cmd
 pattern Roll <- Command (map toLower -> "roll")
 pattern URL u <- ((\a -> (isURL a, a)) -> (True, u))
+
+getTitle :: String -> IO ()
+getTitle url = 
+  do
+    body <- simpleHttp url
+    print $ extractTitle body
+
+extractTitle ::ByteString -> String
+extractTitle body = 
+    unpack $ mconcat $ cursor $// element "title" &// content
+  where cursor = fromDocument doc
+        doc = parseLBS body
 
 -- Determine if a String is a URL
 isURL :: String -> Bool 
