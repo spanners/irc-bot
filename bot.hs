@@ -9,7 +9,7 @@ import System.IO
 import Data.List
 import Data.Char
 import System.Random
-import qualified Network.URL as U    (importURL, url_type, URL, URLType(Absolute))
+import qualified Network.URL as U    (exportURL, importURL, url_type, URL, URLType(Absolute))
 import Data.Maybe
 import Data.Monoid                   (mconcat)
 import Network.HTTP.Conduit          (simpleHttp)
@@ -34,7 +34,7 @@ action h = do
     JOIN nick chan         -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
     PM   from m            -> msg h from ("You said \"" ++ m ++ "\" to me?!")
     MSG  from chan (URL u) -> do
-      body <- simpleHttp u
+      body <- simpleHttp ((U.exportURL . fromJust . U.importURL) u)
       let title = extractTitle body
       msg h chan ("Title: " ++ title)
     MSG  from chan Cat     -> msg h chan "Mew!"
@@ -44,7 +44,7 @@ action h = do
     _                      -> return ()
 
 pattern Bot = "JustAnIRCBot"
-pattern JOIN nick chan 
+pattern JOIN nick chan
    <- (words -> [getNick -> Just nick, "JOIN", chan])
 pattern PING serv <- (words -> ["PING", serv])
 pattern Nick n <- ((\a -> (head a /= '#', a)) -> (True, n))
@@ -54,21 +54,21 @@ pattern MSG from to m <- (getPriv -> Just (from, Chan to, m))
 pattern Cat <- (isInfixOf "cat" . map toLower -> True)
 pattern Command cmd = '>':' ':cmd
 pattern Roll <- Command (map toLower -> "roll")
-pattern URL u <- ((\a -> (isURL a, a)) -> (True, u))
+pattern URL u <- ((\a -> (isURL a, a)) -> (True,  u))
 
 -- extract the <title> from a URL's responseBody
 extractTitle :: ByteString -> String
-extractTitle body = 
+extractTitle body =
     unpack $ mconcat $ cursor $// element "title" &// content
   where cursor = fromDocument doc
         doc = parseLBS body
 
 -- Determine if a String is a URL
-isURL :: String -> Bool 
+isURL :: String -> Bool
 isURL = isURL' . fromJust . U.importURL
   where
     isURL' :: U.URL -> Bool
-    isURL' url = 
+    isURL' url =
       case U.url_type url of
         U.Absolute _ -> True
         _            -> False
