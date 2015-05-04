@@ -38,7 +38,7 @@ readDoc = readMarkdown def
 --                 . readDoc )
 
 main :: IO ()
-main = newMain "wobble <http://google.com> wibble <http://youtube.com> foo <http://pandoc.org/scripting-1.11.html> woo bar baz woo <http://www.dcs.gla.ac.uk/~simonpj/>"
+main = newMain "<wobble> <http://google.com> wibble <http://youtube.com> foo <http://pandoc.org/scripting-1.11.html> woo bar baz woo <http://www.dcs.gla.ac.uk/~simonpj/> <https://i.imgur.com/svDQJx2.jpg>"
 
 newMain :: String -> IO ()
 newMain = mapM_ getTitle . extractURLs . readDoc
@@ -49,10 +49,12 @@ getTitle url =
     body <- (simpleHttp url) `X.catch` statusExceptionHandler
     case body of
       "" -> return ()
-      _  -> print $ extractTitle body
+      _  -> case (extractTitle body) of
+              ""        -> return ()
+              something -> print something
 
 statusExceptionHandler ::  SomeException -> IO L.ByteString
-statusExceptionHandler e = (putStrLn "oops") >> (return L.empty)
+statusExceptionHandler e = (putStrLn "statusExceptionHandler") >> (return L.empty)
 
 extractTitle :: L.ByteString -> String
 extractTitle body =
