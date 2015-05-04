@@ -21,7 +21,7 @@ import Data.ByteString.Lazy.Internal (ByteString(..))
 
 server = "irc.freenode.org"
 port = 6667
-channel = "##bots"
+channel = "##bots_"
 nickname = "JustAnIRCBot"
 
 action :: Handle -> IO ()
@@ -34,9 +34,9 @@ action h = do
     JOIN nick chan         -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
     PM   from m            -> msg h from ("You said \"" ++ m ++ "\" to me?!")
     MSG  from chan (URL u) -> do
-      body <- simpleHttp ((U.exportURL . fromJust . U.importURL) u)
-      let title = extractTitle body
-      msg h chan ("Title: " ++ title)
+      bodies <- mapM simpleHttp (filter isURL (words u))
+      let titles = map extractTitle bodies
+      mapM_ (msg h chan) titles
     MSG  from chan Cat     -> msg h chan "Mew!"
     MSG  from chan Roll    -> do
       roll :: Int <- randomRIO (1, 6)
@@ -65,11 +65,13 @@ extractTitle body =
 
 -- Determine if a String is a URL
 isURL :: String -> Bool
-isURL = isURL' . fromJust . U.importURL
+isURL str = case (U.importURL str) of
+              Just url -> isAbsolute url
+              _     -> False
   where
-    isURL' :: U.URL -> Bool
-    isURL' url =
-      case U.url_type url of
+    isAbsolute :: U.URL -> Bool
+    isAbsolute url =
+      case (U.url_type url) of
         U.Absolute _ -> True
         _            -> False
 
