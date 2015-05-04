@@ -1,6 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+module GetURLTitle where
+
 -- also see https://github.com/jgm/pandoc/blob/master/src/Text/Pandoc/Parsing.hs#L447
 -- also https://github.com/jgm/pandoc/blob/master/src/Text/Pandoc/Shared.hs#L841
-{-# LANGUAGE OverloadedStrings #-}
 import           Control.Exception    as X
 import           Control.Monad
 import qualified Data.ByteString.Lazy as L (ByteString (..), empty)
@@ -29,8 +31,8 @@ extractURLs = query extractURL
 readDoc :: String -> Pandoc
 readDoc = readMarkdown def
 
-main :: IO [String]
-main = (getTitles . linkify) sampleText
+getTitles :: String -> IO [String]
+getTitles = getTitlesFromLinks . linkify
 
 linkify :: String -> String
 linkify = unwords . (map angleWrap) . words
@@ -38,8 +40,8 @@ linkify = unwords . (map angleWrap) . words
     angleWrap :: String -> String
     angleWrap w = '<' : (w ++ ">")
 
-getTitles :: String -> IO [String]
-getTitles = mapM getTitle . extractURLs . readDoc
+getTitlesFromLinks :: String -> IO [String]
+getTitlesFromLinks = mapM getTitle . extractURLs . readDoc
 
 getTitle :: String -> IO String
 getTitle url =

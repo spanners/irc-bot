@@ -10,6 +10,7 @@ import Data.List
 import Data.Char
 import System.Random
 import qualified Network.URL as U (URL, URLType (Absolute), exportURL, importURL, url_type)
+import GetURLTitle
 
 
 server = "irc.freenode.org"
