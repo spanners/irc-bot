@@ -32,16 +32,17 @@ extractURLs = query extractURL
 readDoc :: String -> Pandoc
 readDoc = readMarkdown def
 
---main :: IO ()
---main = interact (  unlines
---                 . extractURLs
---                 . readDoc )
-
 main :: IO ()
-main = newMain "<wobble> <http://google.com> wibble <http://youtube.com> foo <http://pandoc.org/scripting-1.11.html> woo bar baz woo <http://www.dcs.gla.ac.uk/~simonpj/> <https://i.imgur.com/svDQJx2.jpg>"
+main = getTitles (linkify "wobble http://google.com wibble http://youtube.com foo http://pandoc.org/scripting-1.11.html woo bar baz woo http://www.dcs.gla.ac.uk/~simonpj/ https://i.imgur.com/svDQJx2.jpg")
 
-newMain :: String -> IO ()
-newMain = mapM_ getTitle . extractURLs . readDoc
+linkify :: String -> String
+linkify = unwords . (map angleWrap) . words
+  where
+    angleWrap :: String -> String
+    angleWrap w = '<' : (w ++ ">")
+
+getTitles :: String -> IO ()
+getTitles = mapM_ getTitle . extractURLs . readDoc
 
 getTitle :: String -> IO ()
 getTitle url =
@@ -50,8 +51,8 @@ getTitle url =
     case body of
       "" -> return ()
       _  -> case (extractTitle body) of
-              ""        -> return ()
-              something -> print something
+               ""     -> return ()
+               title  -> print title
 
 statusExceptionHandler ::  SomeException -> IO L.ByteString
 statusExceptionHandler e = (putStrLn "statusExceptionHandler") >> (return L.empty)
