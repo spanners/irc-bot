@@ -27,7 +27,9 @@ action h = do
     JOIN Bot chan          -> msg h chan $ "Hello, I am " ++ nickname
     JOIN nick chan         -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
     PM   from m            -> msg h from ("You said \"" ++ m ++ "\" to me?!")
-    MSG  from chan (URL u) -> msg h chan "I saw a URL!"
+    MSG  from chan (URL u) -> do
+      titles <- getTitles u
+      mapM_ (msg h chan) (map ("Title: " ++) titles)
     MSG  from chan Cat     -> msg h chan "Mew!"
     MSG  from chan Roll    -> do
       roll :: Int <- randomRIO (1, 6)
