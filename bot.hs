@@ -9,15 +9,8 @@ import System.IO
 import Data.List
 import Data.Char
 import System.Random
-import qualified Network.URL as U    (exportURL, importURL, url_type, URL, URLType(Absolute))
-import Data.Maybe
-import Data.Monoid                   (mconcat)
-import Network.HTTP.Conduit          (simpleHttp)
-import Text.HTML.DOM                 (parseLBS)
-import Text.XML.Cursor               (attributeIs, content, element,
-                                     fromDocument, ($//), (&//), (>=>))
-import Data.Text                     (unpack)
-import Data.ByteString.Lazy.Internal (ByteString(..))
+import qualified Network.URL as U (URL, URLType (Absolute), exportURL, importURL, url_type)
+
 
 server = "irc.freenode.org"
 port = 6667
@@ -33,10 +26,7 @@ action h = do
     JOIN Bot chan          -> msg h chan $ "Hello, I am " ++ nickname
     JOIN nick chan         -> msg h chan ("Hi, " ++ nick ++ ". Welcome to " ++ chan)
     PM   from m            -> msg h from ("You said \"" ++ m ++ "\" to me?!")
-    MSG  from chan (URL u) -> do
-      bodies <- mapM simpleHttp (filter isURL (words u))
-      let titles = map extractTitle bodies
-      mapM_ (msg h chan) titles
+    MSG  from chan (URL u) -> msg h chan "I saw a URL!"
     MSG  from chan Cat     -> msg h chan "Mew!"
     MSG  from chan Roll    -> do
       roll :: Int <- randomRIO (1, 6)
@@ -55,13 +45,6 @@ pattern Cat <- (isInfixOf "cat" . map toLower -> True)
 pattern Command cmd = '>':' ':cmd
 pattern Roll <- Command (map toLower -> "roll")
 pattern URL u <- ((\a -> (isURL a, a)) -> (True,  u))
-
--- extract the <title> from a URL's responseBody
-extractTitle :: ByteString -> String
-extractTitle body =
-    unpack $ mconcat $ cursor $// element "title" &// content
-  where cursor = fromDocument doc
-        doc = parseLBS body
 
 -- Determine if a String is a URL
 isURL :: String -> Bool
