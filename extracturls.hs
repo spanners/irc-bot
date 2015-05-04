@@ -1,3 +1,4 @@
+-- also see https://github.com/jgm/pandoc/blob/master/src/Text/Pandoc/Parsing.hs#L447
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.ByteString.Lazy.Internal (ByteString (..))
 import           Data.Maybe
