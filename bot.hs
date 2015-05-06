@@ -36,18 +36,17 @@ action h = do
       msg h chan (from ++ ": You rolled " ++ show roll)
     _                      -> return ()
 
-pattern Bot = "JustAnIRCBot"
-pattern JOIN nick chan
-   <- (words -> [getNick -> Just nick, "JOIN", chan])
-pattern PING serv <- (words -> ["PING", serv])
-pattern Nick n <- ((\a -> (head a /= '#', a)) -> (True, n))
-pattern Chan c <- ((\a -> (head a == '#', a)) -> (True, c))
-pattern PM from m <- (getPriv -> Just (from, Nick Bot,  m))
-pattern MSG from to m <- (getPriv -> Just (from, Chan to, m))
-pattern Cat <- (isInfixOf "cat" . map toLower -> True)
-pattern Command cmd = '>':' ':cmd
-pattern Roll <- Command (map toLower -> "roll")
-pattern URL u <- ((\a -> (isURL a, a)) -> (True,  u))
+pattern Bot            = "JustAnIRCBot"
+pattern JOIN nick chan <- (words -> [getNick -> Just nick, "JOIN", chan])
+pattern PING serv      <- (words -> ["PING", serv])
+pattern Nick n         <- ((\a -> (head a /= '#', a)) -> (True, n))
+pattern Chan c         <- ((\a -> (head a == '#', a)) -> (True, c))
+pattern PM from m      <- (getPriv -> Just (from, Nick Bot,  m))
+pattern MSG from to m  <- (getPriv -> Just (from, Chan to, m))
+pattern Cat            <- (isInfixOf "cat" . map toLower -> True)
+pattern Command cmd    = '>':' ':cmd
+pattern Roll           <- Command (map toLower -> "roll")
+pattern URL u          <- ((\a -> (isURL a, a)) -> (True,  u))
 
 -- Determine if a String is a URL
 isURL :: String -> Bool
